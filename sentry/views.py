@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest, \
     HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 from django.utils.safestring import mark_safe
@@ -78,16 +79,16 @@ def login(request):
         form = AuthenticationForm(request)
         request.session.set_test_cookie()
 
-    
     context = locals()
     context.update(csrf(request))
-    return render_to_response('sentry/login.html', context)
+    return render_to_response('sentry/login.html', context,
+                              context_instance=RequestContext(request))
 
 def logout(request):
     from django.contrib.auth import logout
-    
+
     logout(request)
-    
+
     return HttpResponseRedirect(reverse('sentry'))
 
 @login_required
@@ -145,11 +146,11 @@ def index(request):
             continue
         any_filter = True
         message_list = filter_.get_query_set(message_list)
-    
+
     today = datetime.datetime.now()
 
     has_realtime = page == 1
-    
+
     return render_to_response('sentry/index.html', {
         'has_realtime': has_realtime,
         'message_list': message_list,
@@ -159,14 +160,16 @@ def index(request):
         'any_filter': any_filter,
         'request': request,
         'filters': filters,
-    })
+    }, context_instance=RequestContext(request))
 
 @login_required
 def ajax_handler(request):
     op = request.REQUEST.get('op')
 
     if op == 'notification':
-        return render_to_response('sentry/partial/_notification.html', request.GET)
+        return render_to_response('sentry/partial/_notification.html',
+                                  request.GET,
+                                  context_instance=RequestContext(request))
     elif op == 'poll':
         filters = []
         for filter_ in get_filters():
@@ -200,12 +203,12 @@ def ajax_handler(request):
             sort = 'priority'
             if not is_search:
                 message_list = message_list.order_by('-score', '-last_seen')
-        
+
         for filter_ in filters:
             if not filter_.is_set():
                 continue
             message_list = filter_.get_query_set(message_list)
-        
+
         data = [
             (m.pk, {
                 'html': render_to_string('sentry/partial/_group.html', {
@@ -229,13 +232,13 @@ def ajax_handler(request):
             group = GroupedMessage.objects.get(pk=gid)
         except GroupedMessage.DoesNotExist:
             return HttpResponseForbidden()
-        
+
         GroupedMessage.objects.filter(pk=group.pk).update(status=1)
         group.status = 1
-        
+
         if not request.is_ajax():
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
-        
+
         data = [
             (m.pk, {
                 'html': render_to_string('sentry/partial/_group.html', {
@@ -246,7 +249,7 @@ def ajax_handler(request):
             }) for m in [group]]
     else:
         return HttpResponseBadRequest()
-        
+
     response = HttpResponse(simplejson.dumps(data))
     response['Content-Type'] = 'application/json'
     return response
@@ -284,22 +287,24 @@ def group(request, group_id):
             if k.startswith('_') or k in ['url']:
                 continue
             yield k, v
-    
+
     json_data = iter_data(obj)
-    
+
     page = 'details'
-    
-    return render_to_response('sentry/group/details.html', locals())
+
+    return render_to_response('sentry/group/details.html', locals(),
+                              context_instance=RequestContext(request))
 
 @login_required
 def group_message_list(request, group_id):
     group = get_object_or_404(GroupedMessage, pk=group_id)
 
     message_list = group.message_set.all().order_by('-datetime')
-    
+
     page = 'messages'
-    
-    return render_to_response('sentry/group/message_list.html', locals())
+
+    return render_to_response('sentry/group/message_list.html', locals(),
+                              context_instance=RequestContext(request))
 
 @login_required
 def group_message_details(request, group_id, message_id):
@@ -326,19 +331,20 @@ def group_message_details(request, group_id, message_id):
             if k.startswith('_') or k in ['url']:
                 continue
             yield k, v
-    
+
     json_data = iter_data(message)
-    
+
     page = 'messages'
-    
-    return render_to_response('sentry/group/message.html', locals())
+
+    return render_to_response('sentry/group/message.html', locals(),
+                              context_instance=RequestContext(request))
 
 @csrf_exempt
 def store(request):
     key = request.POST.get('key')
     if key != conf.KEY:
         return HttpResponseForbidden('Invalid credentials')
-    
+
     data = request.POST.get('data')
     if not data:
         return HttpResponseForbidden('Missing data')

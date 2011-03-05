@@ -7,18 +7,18 @@
         <meta http-equiv="content-type" content="text/html; charset=utf-8"> 
         <meta name="robots" content="NONE,NOARCHIVE">
         <link href="http{% if request.is_secure %}s{% endif %}://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:light,regular&amp;subset=latin" rel="stylesheet" type="text/css">
-        <link href="{% url sentry-media "styles/global.css" %}" rel="stylesheet" type="text/css"/>
-        <link href="{% url sentry-media "images/sentry.png" %}" rel="shortcut icon"/>
+        <link href="{{ STATIC_URL }}sentry/styles/global.css" rel="stylesheet" type="text/css"/>
+        <link href="{{ STATIC_URL }}sentry/images/sentry.png" rel="shortcut icon"/>
         <title>{% block title %}Sentry{% endblock %}</title> 
         <script type="text/javascript" src="http{% if request.is_secure %}s{% endif %}://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-        <script type="text/javascript" src="{% url sentry-media "scripts/highcharts.js" %}" ></script>
-        <script type="text/javascript" src="{% url sentry-media "scripts/jquery.animate-colors-min.js" %}"></script>
-        <script type="text/javascript" src="{% url sentry-media "scripts/global.js" %}"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}sentry/scripts/highcharts.js" ></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}sentry/scripts/jquery.animate-colors-min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}sentry/scripts/global.js"></script>
         <script type="text/javascript">
         Sentry.config({
-            mediaUrl: '{% url sentry-media '' %}',
+            mediaUrl: '{{ STATIC_URL }}sentry/',
             apiUrl: '{% url sentry-ajax %}',
-            defaultImage: '{% url sentry-media 'images/sentry.png' %}'
+            defaultImage: '{{ STATIC_URL }}sentry/images/sentry.png'
         });
         {% if has_realtime %}
         Sentry.realtime.enable();
@@ -30,7 +30,7 @@
         {% block body %}
         <div id="header"> 
             <div class="container">
-                <h1><a href="{% url sentry %}"><img src="{% url sentry-media "images/sentry.png" %}" border="0" width="32"/>Sentry</a></h1>
+                <h1><a href="{% url sentry %}"><img src="{{ STATIC_URL }}sentry/images/sentry.png" border="0" width="32"/>Sentry</a></h1>
                 <h2>{% block heading %}Dashboard{% endblock %}</h2>
                 <ul class="nav" id="account">
                     {% if request.user.is_authenticated %}
