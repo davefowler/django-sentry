@@ -1060,7 +1060,10 @@ class SentryClientTest(TestCase):
         self.assertEquals(_foo[''].class_name, 'Exception')
 
     def test_celery_client(self):
-        from sentry.client.celery import CelerySentryClient
+        try:
+            from sentry.client.celery import CelerySentryClient
+        except ImportError:  # celery not installed, skipping
+            return
         self.assertEquals(get_client().__class__, SentryClient)
         self.assertEquals(get_client(), get_client())
 
@@ -1098,6 +1101,9 @@ class SentrySearchTest(TestCase):
         from sentry.views import get_search_query_set
         logger.error('test search error')
 
-        qs = get_search_query_set('error')
+        try:
+            qs = get_search_query_set('error')
+        except ImportError:  # haystack not installed, skipping
+            return
         self.assertEquals(qs.count(), 1)
         self.assertEquals(qs[0:1][0].message, 'test search error')
